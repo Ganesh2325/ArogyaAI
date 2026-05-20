@@ -188,30 +188,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* 7. SAFETY */}
-      <section id="safety" className="safety-section section-padding">
-        <div className="container">
-          <div className="safety-header text-center">
-            <h2 className="section-title">Built with Safety at the Core</h2>
-          </div>
-          <div className="safety-grid grid-3">
-            <SafetyCard title="Emergency First Approach" desc="Critical symptoms always trigger immediate emergency recommendations." />
-            <SafetyCard title="Clinically Guided Logic" desc="Combines AI intelligence with medical decision rules and triage protocols." />
-            <SafetyCard title="Conservative Decisions" desc="When uncertain, the system prioritizes safer outcomes by escalating risk levels." />
-            <SafetyCard title="Transparent Results" desc="We clearly explain why a condition is suggested or a risk level assigned." />
-            <SafetyCard title="Data Privacy" desc="End-to-end encryption and secure session handling for your peace of mind." />
-          </div>
-
-          <div className="medical-disclaimer glass-effect">
-            <AlertTriangle className="icon-yellow" size={24} />
-            <div>
-              <strong>Medical Disclaimer</strong>
-              <p>ArogyaAI is designed to support—not replace—professional medical advice. Always consult a licensed doctor for diagnosis and treatment.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* 8. FAQ */}
       <section id="faq" className="faq-section section-padding">
         <div className="container">

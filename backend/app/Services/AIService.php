@@ -33,7 +33,7 @@ You are an advanced AI medical assistant for ArogyaAI with doctor-level clinical
 
 Your task is to:
 1. Analyze symptoms using professional clinical reasoning.
-2. Provide a detailed, conversational response that explains potential causes, recommended actions, and safety advice naturally in the text.
+2. Provide a detailed, clinical response that explains potential causes, recommended actions, and safety advice in clean bullet points, highlighting extremely key warnings in bold font.
 3. Use a tone that is empathetic yet clinically accurate.
 
 ---
@@ -44,23 +44,27 @@ STEP 1: CLINICAL ANALYSIS
 - Assess risk levels based on medical urgency.
 
 STEP 2: RESPONSE GENERATION
-Provide a highly structured yet conversational response in the `message` field. Use clear headings for readability:
+Provide a highly structured response in the `message` field. Use clear headings for readability and present insights in bullet points, using bold text (**warning**) for very important guidance:
 
 ### Understanding Your Symptoms
-[Explain what the user is reporting and the context]
+- [Explain what the user is reporting and the context]
+- [Use bullet points to list symptoms]
 
 ### Potential Causes
-[Discuss likely conditions and their relevance to the reported symptoms naturally]
+- [Discuss potential conditions and their relevance to reported symptoms in bullet points]
+- [Highlight key symptoms or conditions in **bold**]
 
 ### Recommended Next Steps
-[Provide actionable guidance like hydration, rest, or scheduling a doctor's visit]
+- [Provide actionable guidance like hydration, rest, or scheduling a doctor's visit in bullet points]
+- [Make very important next steps **bold**]
 
 ### When to Seek Emergency Care
-[List clear red flags and emergency symptoms]
+- [List clear red flags and emergency symptoms in bullet points]
+- [Make life-threatening symptoms and emergency warnings **bold**]
 
 STEP 3: JSON DATA
 Even though we are providing a conversational response, you MUST still return a valid JSON object with the following background data:
-- "message": (string) The full conversational analysis from Step 2.
+- "message": (string) The full conversational analysis from Step 2 containing the headings and bullet points with bold markdown.
 - "triage": (string) Internal risk assessment ("EMERGENCY", "PRIMARY_CARE", or "SELF_CARE").
 - "conditions": (array) Internal condition ranking for database storage.
 - "next_steps": (string) One clear actionable sentence.
@@ -69,7 +73,7 @@ Even though we are providing a conversational response, you MUST still return a 
 
 ---
 ## RULES
-- DO NOT use markdown bold/italics in the message content (except for headings using ###). Use plain text.
+- ALWAYS format insights using clear bullet points. Use bold markdown (**text**) to highlight critical medical terms, warnings, and urgent advice so they are easily accessible by the user.
 - ONLY answer health/medical queries.
 - Incorporate triage levels and potential conditions NATURALLY into the text instead of using external cards or meters.
 
@@ -174,46 +178,11 @@ PROMPT;
     }
 
     /**
-     * Local Rule-Based Analysis (Pseudo-AI)
-     * Used when external API is down to ensure 24/7 reliability.
+     * Local Fallback - Disabled in production to prevent simulated, mock diagnosis responses.
      */
     protected function analyzeLocally(string $input): array
     {
-        $input = strtolower($input);
-        
-        // Red Flag Detection (Emergency)
-        $redFlags = ['chest pain', 'breathing', 'unconscious', 'bleeding', 'stroke', 'heart attack', 'severe pain', 'fracture'];
-        $isEmergency = false;
-        foreach ($redFlags as $flag) {
-            if (str_contains($input, $flag)) {
-                $isEmergency = true;
-                break;
-            }
-        }
-
-        if ($isEmergency) {
-            return [
-                'message' => "My analysis engine is currently undergoing maintenance, but based on your description of serious symptoms, I have detected potential red flags.\n\n1. Assessment\n- Severe symptoms detected\n- Potential emergency risk\n\n2. Recommendation\n- Seek immediate medical attention\n- Do not wait for symptoms to worsen\n\n3. Red Flags\n- Symptoms involving vital functions (heart/lungs/neurological)",
-                'triage' => 'EMERGENCY',
-                'color_code' => 'RED',
-                'conditions' => [['name' => 'Acute Medical Emergency', 'probability' => 0.9]],
-                'next_steps' => "Call emergency services (911) or go to the nearest ER immediately.",
-                'follow_up' => "Are you with someone who can help you right now?",
-                'disclaimer' => "Local safety fallback active - This is not a diagnosis",
-                'is_rejected' => false
-            ];
-        }
-
-        // Standard Fallback (Primary Care)
-        return [
-            'message' => "My analysis engine is busy right now, but I can still provide general guidance. \n\n1. Understanding Your Symptoms\n- General symptoms reported\n- Duration/Severity requires monitoring\n\n2. Recommended Actions\n- Rest and stay hydrated\n- Monitor temperature if fever is suspected\n- Keep a log of symptom changes\n\n3. Next Steps\n- Consult a primary care doctor for a thorough examination.",
-            'triage' => 'PRIMARY_CARE',
-            'color_code' => 'YELLOW',
-            'conditions' => [['name' => 'General Viral/Bacterial Infection', 'probability' => 0.6]],
-            'next_steps' => "Schedule an appointment with a general physician.",
-            'follow_up' => "Have you noticed any other changes in your health today?",
-            'disclaimer' => "Local safety fallback active - This is not a diagnosis",
-            'is_rejected' => false
-        ];
+        Log::error("Local Fallback Triggered: Unable to communicate with Gemini Clinical Reasoning Engine.");
+        throw new \Exception("ArogyaAI clinical reasoning engine is currently unreachable. Please verify your internet connection or check your GEMINI_API_KEY configuration.");
     }
 }

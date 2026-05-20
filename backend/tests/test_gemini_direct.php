@@ -1,6 +1,6 @@
 <?php
 
-$apiKey = 'AIzaSyC9alLiRCsFE1JMi6h5N16MD4Wo5N8aDm4';
+$apiKey = getenv('GEMINI_API_KEY') ?: 'YOUR_API_KEY_HERE';
 $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey";
 
 $data = [

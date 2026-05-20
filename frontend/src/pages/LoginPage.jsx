@@ -42,11 +42,7 @@ const LoginPage = () => {
           <ArrowLeft size={18} /> <span>Back</span>
         </button>
         <div className="auth-header">
-          <div className="icon-box">
-            <Activity className="icon-blue" size={32} />
-          </div>
           <h2>Welcome Back</h2>
-          <p>Securely access your healthcare profile.</p>
           {successMessage && <div className="success-alert">{successMessage}</div>}
           {error && <div className="error-alert">{error}</div>}
         </div>
@@ -72,7 +68,7 @@ const LoginPage = () => {
               <Lock className="input-icon" size={18} />
               <input
                 type="password"
-                placeholder="••••••••"
+                placeholder="Password"
                 required
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -81,7 +77,7 @@ const LoginPage = () => {
           </div>
 
           <button type="submit" className="btn-primary auth-btn" disabled={loading}>
-            {loading ? 'Logging In...' : 'Log In'} <LogIn size={20} />
+            {loading ? 'Logging In...' : 'Log In'} 
           </button>
         </form>
 

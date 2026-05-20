@@ -23,7 +23,9 @@ class ChatController extends Controller
     {
         $request->validate([
             'message' => 'required|string|min:2',
-            'consultation_id' => 'nullable|exists:consultations,id'
+            'consultation_id' => 'nullable|exists:consultations,id',
+            'lat' => 'nullable|numeric',
+            'lng' => 'nullable|numeric'
         ]);
 
         $userId = Auth::id() ?? 1; // Fallback for dev
@@ -31,7 +33,9 @@ class ChatController extends Controller
         $result = $this->chatService->processMessage(
             $request->message,
             $userId,
-            $request->consultation_id
+            $request->consultation_id,
+            $request->lat,
+            $request->lng
         );
 
         return response()->json($result);

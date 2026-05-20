@@ -20,9 +20,9 @@ class ChatService
     /**
      * Process a new chat message.
      */
-    public function processMessage(string $userInput, int $userId, ?int $consultationId = null)
+    public function processMessage(string $userInput, int $userId, ?int $consultationId = null, ?float $lat = null, ?float $lng = null)
     {
-        return DB::transaction(function () use ($userInput, $userId, $consultationId) {
+        return DB::transaction(function () use ($userInput, $userId, $consultationId, $lat, $lng) {
             // 1. Get or create consultation
             $consultation = $consultationId 
                 ? Consultation::findOrFail($consultationId)
@@ -54,8 +54,15 @@ class ChatService
             ]);
 
             // 6. Update predictions and consultation triage if not rejected
+            $triageLevel = 'PRIMARY_CARE';
             if (!$aiResponse['is_rejected']) {
-                $consultation->update(['triage_result' => $aiResponse['triage']]);
+                if (is_array($aiResponse['triage']) && isset($aiResponse['triage']['level'])) {
+                    $triageLevel = $aiResponse['triage']['level'];
+                } elseif (is_string($aiResponse['triage'])) {
+                    $triageLevel = $aiResponse['triage'];
+                }
+
+                $consultation->update(['triage_result' => $triageLevel]);
 
                 // Clear old predictions for this consultation and add new ones
                 Prediction::where('consultation_id', $consultation->id)->delete();
@@ -67,6 +74,20 @@ class ChatService
                     ]);
                 }
             }
+
+            // 7. Get Nearby Hospitals/Clinics and recommended specialists based on location
+            $nearbyHospitals = [];
+            if (!$aiResponse['is_rejected']) {
+                $hospitalService = app(\App\Services\HospitalService::class);
+                $nearbyHospitals = $hospitalService->getNearby(
+                    $lat,
+                    $lng,
+                    $triageLevel,
+                    $aiResponse['recommended_specialists'] ?? ['General Physician']
+                );
+            }
+
+            $aiResponse['nearby_hospitals'] = $nearbyHospitals;
 
             return array_merge($aiResponse, ['consultation_id' => $consultation->id]);
         });

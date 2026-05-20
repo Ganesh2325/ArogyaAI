@@ -36,11 +36,7 @@ const SignupPage = () => {
           <ArrowLeft size={18} /> <span>Back</span>
         </button>
         <div className="auth-header">
-          <div className="icon-box">
-            <Activity className="icon-blue" size={32} />
-          </div>
           <h2>Create Your Account</h2>
-          <p>Join ArogyaAI for intelligent healthcare insights.</p>
           {error && <div className="error-alert">{error}</div>}
         </div>
 
@@ -79,7 +75,7 @@ const SignupPage = () => {
               <Lock className="input-icon" size={18} />
               <input
                 type="password"
-                placeholder="••••••••"
+                placeholder="Password"
                 required
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -88,7 +84,7 @@ const SignupPage = () => {
           </div>
 
           <button type="submit" className="btn-primary auth-btn" disabled={loading}>
-            {loading ? 'Creating Account...' : 'Sign Up'} <ArrowRight size={20} />
+            {loading ? 'Creating Account...' : 'Sign Up'}
           </button>
         </form>
 
