@@ -10,6 +10,9 @@ import '../styles/DashboardLayout.css';
 const DashboardLayout = () => {
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    return localStorage.getItem('sidebar_collapsed') === 'true';
+  });
 
   React.useEffect(() => {
     const token = localStorage.getItem('auth_token');
@@ -32,6 +35,12 @@ const DashboardLayout = () => {
     setIsSidebarOpen(false);
   };
 
+  const handleToggleCollapse = () => {
+    const newState = !isCollapsed;
+    setIsCollapsed(newState);
+    localStorage.setItem('sidebar_collapsed', String(newState));
+  };
+
   const navItems = [
     { name: 'Dashboard', icon: Home, path: '/dashboard' },
     { name: 'AI Consultation', icon: MessageSquare, path: '/chat' },
@@ -39,8 +48,6 @@ const DashboardLayout = () => {
     { name: 'Health Analytics', icon: BarChart2, path: '/analytics' },
     { name: 'Risk Prediction', icon: TrendingUp, path: '/risks' },
   ];
-
-
 
   return (
     <div className="dashboard-layout">
@@ -56,27 +63,27 @@ const DashboardLayout = () => {
       </div>
 
       {/* Sidebar Navigation */}
-      <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-header desktop-only">
+      <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${isSidebarOpen ? 'open' : ''}`}>
+        <div className="sidebar-header">
+          <button className="collapse-btn desktop-only" onClick={handleToggleCollapse} title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}>
+            <Menu size={18} />
+          </button>
           <div className="logo-box">
             <ActivityIcon />
           </div>
-          <h2>ArogyaAI</h2>
+          <h2 className="sidebar-logo-text">ArogyaAI</h2>
+          <button className="mobile-close-btn mobile-only" onClick={closeSidebar} title="Close Menu">
+            <X size={20} />
+          </button>
         </div>
 
         <div className="sidebar-scrollable">
           <nav className="nav-menu">
-            {navItems.slice(0, 3).map(item => (
+            {navItems.map(item => (
               <NavLink key={item.path} to={item.path} onClick={closeSidebar} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                <item.icon size={18} />
-                <span>{item.name}</span>
-              </NavLink>
-            ))}
-
-            {navItems.slice(3, 6).map(item => (
-              <NavLink key={item.path} to={item.path} onClick={closeSidebar} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                <item.icon size={18} />
-                <span>{item.name}</span>
+                <item.icon size={18} className="nav-icon" />
+                <span className="nav-label">{item.name}</span>
+                <span className="tooltip">{item.name}</span>
               </NavLink>
             ))}
           </nav>
@@ -84,8 +91,9 @@ const DashboardLayout = () => {
 
         <div className="sidebar-footer">
           <button onClick={handleLogout} className="nav-item logout-btn">
-            <LogOut size={18} />
-            <span>Logout</span>
+            <LogOut size={18} className="nav-icon" />
+            <span className="nav-label">Logout</span>
+            <span className="tooltip">Logout</span>
           </button>
         </div>
       </aside>
