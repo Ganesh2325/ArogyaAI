@@ -3,8 +3,8 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\DiagnosisController;
-use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ConsultationController;
+use App\Http\Controllers\SymptomScannerController;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,21 +19,25 @@ Route::post('/login', [AuthController::class, 'login']);
 // Protected Routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/me', [AuthController::class, 'me']);
+    Route::get('/user', [AuthController::class, 'user']);
+    Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index']);
     
-    // Diagnosis & Triage
-    Route::post('/analyze', [DiagnosisController::class, 'analyze']);
-    Route::post('/message', [DiagnosisController::class, 'message']);
-    Route::get('/history', [DiagnosisController::class, 'history']);
+    // Symptom Scanner Endpoints
+    Route::post('/scanner/analyze', [SymptomScannerController::class, 'analyze']);
+    Route::get('/scanner/history', [SymptomScannerController::class, 'history']);
+    Route::delete('/scanner/{id}', [SymptomScannerController::class, 'destroy']);
+    
+    // Health Analytics Endpoints
+    Route::get('/analytics/metrics', [\App\Http\Controllers\HealthAnalyticsController::class, 'metrics']);
+    
 
-    // Production-Grade Chat System
-    Route::post('/chat/send', [\App\Http\Controllers\ChatController::class, 'sendMessage']);
-    Route::get('/chat/history', [\App\Http\Controllers\ChatController::class, 'getHistory']);
-    Route::delete('/chat/consultation/{id}', [\App\Http\Controllers\ChatController::class, 'deleteConsultation']);
+    // Risk Prediction Endpoints
+    Route::get('/risk-prediction', [\App\Http\Controllers\RiskPredictionController::class, 'forecast']);
     
-    // Reports
-    Route::get('/report/{id}', [ReportController::class, 'generate']);
+    // Consultation Endpoints
+    Route::post('/consultation/start', [ConsultationController::class, 'start']);
+    Route::post('/consultation/message', [ConsultationController::class, 'message']);
+    Route::get('/consultation/history', [ConsultationController::class, 'history']);
+    Route::get('/consultation/memory', [ConsultationController::class, 'memory']);
+    Route::delete('/consultation/{id}', [ConsultationController::class, 'destroy']);
 });
-
-// For testing (Public access to analyze while frontend is being updated)
-Route::post('/public/analyze', [DiagnosisController::class, 'analyze']);

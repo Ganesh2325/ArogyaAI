@@ -4,12 +4,19 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Prediction extends Model
+class ConsultationMessage extends Model
 {
     protected $fillable = [
         'consultation_id',
-        'condition_name',
-        'probability'
+        'role',
+        'message',
+        'extracted_symptoms',
+        'follow_up_questions',
+        'triage_level'
+    ];
+
+    protected $casts = [
+        'extracted_symptoms' => 'json'
     ];
 
     public function consultation()

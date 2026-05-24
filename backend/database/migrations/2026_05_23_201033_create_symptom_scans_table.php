@@ -11,11 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('messages', function (Blueprint $table) {
+        Schema::create('symptom_scans', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('consultation_id')->constrained()->onDelete('cascade');
-            $table->enum('sender', ['user', 'ai']);
-            $table->text('message_text');
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->string('image_path');
+            $table->json('ai_analysis')->nullable();
+            $table->string('risk_level')->default('UNKNOWN'); // LOW, MODERATE, HIGH, EMERGENCY
             $table->timestamps();
         });
     }
@@ -25,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('messages');
+        Schema::dropIfExists('symptom_scans');
     }
 };

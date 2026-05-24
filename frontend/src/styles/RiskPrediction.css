@@ -1,0 +1,263 @@
+.risk-container {
+  padding: 32px;
+  height: 100%;
+  overflow-y: auto;
+  background: #F8FAFC;
+}
+
+.risk-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #334155;
+  text-align: center;
+}
+
+.radar-spinner {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 4px solid #DBEAFE;
+  border-top-color: #2563EB;
+  animation: spin 1s linear infinite;
+  margin-bottom: 24px;
+}
+
+.risk-loading h3 {
+  font-size: 1.5rem;
+  margin: 0 0 8px 0;
+  color: #0F172A;
+}
+
+.risk-loading p {
+  color: #64748B;
+}
+
+.risk-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 32px;
+}
+
+.header-titles h2 {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0 0 8px 0;
+}
+
+.header-titles p {
+  color: #64748B;
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.last-updated {
+  font-size: 0.85rem;
+  color: #94A3B8;
+  font-weight: 500;
+}
+
+.btn-refresh {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: white;
+  border: 1px solid #CBD5E1;
+  border-radius: 8px;
+  color: #0F172A;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-refresh:hover {
+  background: #F1F5F9;
+  border-color: #94A3B8;
+}
+
+.btn-refresh.spinning svg {
+  animation: spin 1s linear infinite;
+}
+
+.btn-refresh:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.risk-main-content {
+  display: flex;
+  gap: 32px;
+}
+
+.score-panel {
+  width: 320px;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #E2E8F0;
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+
+.score-ring {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: conic-gradient(var(--score-color) var(--score-deg), #F1F5F9 0deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 32px;
+}
+
+.score-inner {
+  width: 170px;
+  height: 170px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.score-value {
+  font-size: 4rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.score-label {
+  font-size: 0.85rem;
+  color: #64748B;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 100px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin-bottom: 24px;
+}
+
+.status-badge.optimal {
+  background: #D1FAE5;
+  color: #059669;
+}
+
+.status-badge.moderate {
+  background: #FEF3C7;
+  color: #D97706;
+}
+
+.status-badge.critical {
+  background: #FEE2E2;
+  color: #DC2626;
+}
+
+.cache-notice {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: #94A3B8;
+  text-align: center;
+}
+
+.analysis-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.analysis-section {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #E2E8F0;
+  padding: 32px;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.section-header h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: #0F172A;
+}
+
+.icon-blue { color: #2563EB; }
+.icon-green { color: #10B981; }
+
+.markdown-box {
+  color: #334155;
+  line-height: 1.7;
+  font-size: 1.05rem;
+}
+
+.action-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.action-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  background: #F8FAFC;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #E2E8F0;
+}
+
+.action-bullet {
+  width: 8px;
+  height: 8px;
+  background: #10B981;
+  border-radius: 50%;
+  margin-top: 8px;
+  flex-shrink: 0;
+}
+
+.action-item p {
+  margin: 0;
+  color: #1E293B;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+@media (max-width: 1100px) {
+  .risk-main-content {
+    flex-direction: column;
+  }
+  .score-panel {
+    width: 100%;
+  }
+}

@@ -4,7 +4,7 @@ import {
   AlertTriangle, ArrowRight, RefreshCw, Paperclip,
   ChevronRight, HeartPulse, ShieldAlert, CheckCircle2,
   History, LogOut, MessageSquare, Info, Trash2,
-  MapPin, Navigation, Phone, ExternalLink, ShieldCheck, FileText, AlertCircle
+  MapPin, Navigation, Phone, ExternalLink, ShieldCheck, FileText, AlertCircle, Brain
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -18,9 +18,20 @@ const CITIES = [
   { name: 'Chennai (Nungambakkam)', lat: 13.0604, lng: 80.2496 }
 ];
 
+const MEDICAL_KEYWORDS = [
+  'Migraine', 'Stroke', 'Meningitis', 'Severe Headache', 'Emergency Care',
+  'Hydration', 'Doctor Consultation', 'Risk Level', 'Emergency', 'Immediate Care',
+  'Critical', 'Fever', 'Nausea', 'Vomiting', 'Pain', 'Symptom', 'Symptoms',
+  'Blood Pressure', 'Heart Attack', 'Seizure', 'Concussion', 'Infection', 'Antibiotics'
+];
+
+const EMERGENCY_KEYWORDS = [
+  'Emergency Warning', 'Seek Immediate Care', 'Critical Symptoms', 'Call Emergency Services', 'Seek immediate emergency care'
+];
+
 const cleanMarkdownSymbols = (text) => {
   if (!text) return '';
-  return text.replace(/[*#]/g, '');
+  return text; // Do not strip symbols, parser needs them
 };
 
 const renderFormattedText = (text) => {
@@ -29,60 +40,81 @@ const renderFormattedText = (text) => {
   const lines = text.split('\n');
   let elements = [];
   let currentList = [];
+  let currentSection = '';
 
   const formatBoldText = (lineText) => {
-    const parts = lineText.split(/(\*\*.*?\*\*|\*.*?\*)/g);
-    return parts.map((part, i) => {
-      if (part.startsWith('**') && part.endsWith('**')) {
-        return <strong key={i} className="highlighted-warning" style={{ color: '#000000', fontWeight: '900', fontSize: '1.05em' }}>{part.slice(2, -2)}</strong>;
-      } else if (part.startsWith('*') && part.endsWith('*')) {
-        return <strong key={i} className="highlighted-warning" style={{ color: '#000000', fontWeight: '900', fontSize: '1.05em' }}>{part.slice(1, -1)}</strong>;
-      }
-      return part;
-    });
+    let parts = [lineText];
+
+    const splitByRegex = (regex) => {
+      let newParts = [];
+      parts.forEach(part => {
+        if (typeof part === 'string') {
+          const split = part.split(regex);
+          split.forEach((s, idx) => {
+            if (idx % 2 === 1) {
+              newParts.push(<strong className="important-text">{s}</strong>);
+            } else if (s) {
+              newParts.push(s);
+            }
+          });
+        } else {
+          newParts.push(part);
+        }
+      });
+      parts = newParts;
+    };
+
+    splitByRegex(/\*\*(.*?)\*\*/g);
+
+    const keywordsRegex = new RegExp(`\\b(${MEDICAL_KEYWORDS.join('|')})\\b`, 'gi');
+    splitByRegex(keywordsRegex);
+
+    return parts.map((part, i) => React.isValidElement(part) ? React.cloneElement(part, { key: i }) : part);
+  };
+
+  const flushList = () => {
+    if (currentList.length > 0) {
+      elements.push(<ul key={`list-${elements.length}`} className="insight-bullet-list">{currentList}</ul>);
+      currentList = [];
+    }
   };
 
   lines.forEach((line, index) => {
     const trimmed = line.trim();
-    
-    // Check for explicit markdown headings (1-3 hashes) or fully bolded lines which act as headings
-    const isMarkdownHeading = /^#{1,3}\s/.test(trimmed);
-    const isBoldHeading = /^(\*\*|__)(.+?)\1:?$/.test(trimmed); // Allow optional colon at the end
-    
-    // Heuristic for plain text headings (short, no punctuation at end, Title Case, etc)
-    const isPlainHeading = trimmed.length > 2 && trimmed.length <= 50 && /^[A-Z]/.test(trimmed) && !/[.!?]$/.test(trimmed) && !trimmed.includes('**') && !trimmed.startsWith('-') && !trimmed.startsWith('*');
+    if (!trimmed) return;
 
-    if (isMarkdownHeading || isBoldHeading || (isPlainHeading && line === line.trim())) {
-      if (currentList.length > 0) {
-        elements.push(<ul key={`list-${index}`} className="insight-bullet-list">{currentList}</ul>);
-        currentList = [];
-      }
-      
+    const isMarkdownHeading = /^#{1,3}\s/.test(trimmed);
+    const isBoldHeading = /^(\*\*|__)(.+?)\1:?$/.test(trimmed);
+    const isPlainHeading = trimmed.length > 2 && trimmed.length <= 60 && /^[A-Z]/.test(trimmed) && !/[.!?]$/.test(trimmed) && !trimmed.includes('**') && !trimmed.startsWith('-') && !trimmed.startsWith('*') && !trimmed.includes(':');
+
+    if (isMarkdownHeading || isBoldHeading || isPlainHeading) {
+      flushList();
       let headingText = trimmed;
-      if (isMarkdownHeading) {
-        headingText = trimmed.replace(/^#{1,3}\s*/, '').replace(/[*#]/g, '');
-      } else if (isBoldHeading) {
-        headingText = trimmed.replace(/^(\*\*|__)(.+?)\1:?$/, '$2');
+      if (isMarkdownHeading) headingText = trimmed.replace(/^#{1,3}\s*/, '').replace(/[*#]/g, '');
+      else if (isBoldHeading) headingText = trimmed.replace(/^(\*\*|__)(.+?)\1:?$/, '$2');
+
+      if (headingText.toLowerCase().includes('follow-up') || headingText.toLowerCase().includes('follow up')) {
+        currentSection = 'follow-up';
+      } else if (isMarkdownHeading || (isPlainHeading && !isBoldHeading)) {
+        currentSection = 'other';
       }
-      
-      elements.push(<h3 key={`h-${index}`} className="insight-heading" style={{ color: '#000000', fontWeight: '900', fontSize: '1.2rem', marginTop: '20px', marginBottom: '10px' }}>{headingText}</h3>);
+
+      if (isBoldHeading && (currentSection === 'follow-up' || headingText.endsWith('?'))) {
+        elements.push(<p key={`p-${index}`} className="insight-paragraph" style={{ fontWeight: 'bold' }}>{headingText}</p>);
+      } else {
+        elements.push(<h3 key={`h-${index}`} className="insight-heading">{headingText}</h3>);
+      }
     } else if (trimmed.startsWith('-') || trimmed.startsWith('*')) {
       const cleanLine = trimmed.replace(/^[-*]\s*/, '');
-      currentList.push(<li key={`li-${index}`}>{formatBoldText(cleanLine)}</li>);
-    } else if (trimmed.length > 0) {
-      if (currentList.length > 0) {
-        elements.push(<ul key={`list-${index}`} className="insight-bullet-list">{currentList}</ul>);
-        currentList = [];
-      }
-      const cleanParagraph = trimmed.replace(/[#]/g, '');
+      currentList.push(<li key={`li-${index}`}>• {formatBoldText(cleanLine)}</li>);
+    } else {
+      flushList();
+      const cleanParagraph = trimmed.replace(/[*#]/g, '');
       elements.push(<p key={`p-${index}`} className="insight-paragraph">{formatBoldText(cleanParagraph)}</p>);
     }
   });
 
-  if (currentList.length > 0) {
-    elements.push(<ul key="list-final" className="insight-bullet-list">{currentList}</ul>);
-  }
-
+  flushList();
   return elements;
 };
 
@@ -140,12 +172,12 @@ const ChatInterface = () => {
     try {
       const token = localStorage.getItem('auth_token');
       if (!token) return;
-      const response = await axios.get('http://localhost:8000/api/chat/history', {
+      const response = await axios.get('http://localhost:8000/api/consultation/history', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setHistory(response.data);
+      setHistory(response.data.consultations);
     } catch (error) {
-      console.error('History error:', error);
+      console.error('Failed to fetch history:', error);
     }
   };
 
@@ -263,39 +295,38 @@ const ChatInterface = () => {
 
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await axios.post('http://localhost:8000/api/chat/send',
+      let currentConsultationId = activeConsultationId;
+
+      if (!currentConsultationId) {
+        const startRes = await axios.post('http://localhost:8000/api/consultation/start', {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        currentConsultationId = startRes.data.consultation.id;
+        setActiveConsultationId(currentConsultationId);
+      }
+
+      const response = await axios.post('http://localhost:8000/api/consultation/message',
         {
+          consultation_id: currentConsultationId,
           message: currentInput,
-          consultation_id: activeConsultationId,
-          lat: lat,
-          lng: lng
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      const data = response.data;
+      const data = response.data.message;
+      const memoryUsed = response.data.memory_used;
 
       const botMessage = {
         role: 'bot',
-        text: cleanMarkdownSymbols(data.message),
-        explanation: data.is_rejected ? null : cleanMarkdownSymbols(data.explanation || data.message),
-        next_steps: cleanMarkdownSymbols(data.next_steps),
-        follow_up: cleanMarkdownSymbols(data.follow_up),
+        text: cleanMarkdownSymbols(data.text),
+        explanation: cleanMarkdownSymbols(data.text),
+        follow_up: cleanMarkdownSymbols(data.follow_up || ''),
         triage: data.triage,
-        conditions: data.conditions,
-        disclaimer: data.disclaimer,
-        consultation_id: data.consultation_id,
-        lat: data.lat || lat,
-        lng: data.lng || lng,
-        nearby_hospitals: data.nearby_hospitals,
-        recommended_specialists: data.recommended_specialists,
-        data: data
+        data: data,
+        memory_used: memoryUsed
       };
 
       setMessages(prev => [...prev, botMessage]);
-      if (!activeConsultationId && data.consultation_id) {
-        setActiveConsultationId(data.consultation_id);
-      }
       fetchHistory();
     } catch (error) {
       console.error('Chat error:', error);
@@ -323,7 +354,7 @@ const ChatInterface = () => {
     if (!window.confirm("Delete this consultation?")) return;
     try {
       const token = localStorage.getItem('auth_token');
-      await axios.delete(`http://localhost:8000/api/chat/consultation/${id}`, {
+      await axios.delete(`http://localhost:8000/api/consultation/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (activeConsultationId === id) {
@@ -337,22 +368,16 @@ const ChatInterface = () => {
 
   const loadConsultation = (cons) => {
     const pastMessages = cons.messages.map((m, index) => {
-      const isBot = m.sender === 'ai';
-      const isLastBotMessage = isBot && index === cons.messages.length - 1;
-
+      const isBot = m.role === 'assistant';
       return {
         role: isBot ? 'bot' : 'user',
-        text: cleanMarkdownSymbols(m.message_text),
-        next_steps: isLastBotMessage ? cleanMarkdownSymbols(cons.triage_result === 'EMERGENCY' ? 'Seek immediate emergency care.' : 'Schedule an appointment.') : null,
-        data: isLastBotMessage ? {
-          triage: cons.triage_result,
-          color_code: cons.triage_result === 'EMERGENCY' ? 'RED' : (cons.triage_result === 'PRIMARY_CARE' ? 'YELLOW' : 'GREEN'),
-          next_steps: cons.triage_result === 'EMERGENCY' ? 'Seek immediate emergency care.' : 'Schedule an appointment.',
-          explanation: cleanMarkdownSymbols(m.message_text),
-          lat: cons.lat || lat || 17.4374,
-          lng: cons.lng || lng || 78.4019,
-          nearby_hospitals: cons.nearby_hospitals || [],
-          recommended_specialists: cons.predictions?.map(p => p.condition_name) || []
+        text: cleanMarkdownSymbols(m.message),
+        triage: m.triage_level,
+        follow_up: m.follow_up_questions ? cleanMarkdownSymbols(m.follow_up_questions) : null,
+        data: isBot ? {
+          triage: m.triage_level,
+          color_code: m.triage_level === 'EMERGENCY' ? 'RED' : 'GREEN',
+          explanation: cleanMarkdownSymbols(m.message)
         } : null
       };
     });
@@ -392,12 +417,6 @@ const ChatInterface = () => {
             ))
           )}
         </div>
-        <div className="sidebar-footer">
-          <div className="user-profile-small">
-            <div className="avatar-small"><User size={16} /></div>
-            <span>{JSON.parse(localStorage.getItem('user') || '{}').name || 'User'}</span>
-          </div>
-        </div>
       </aside>
 
       {/* 2. MAIN WORKSPACE WITH DUAL-PANE SPLIT */}
@@ -412,25 +431,6 @@ const ChatInterface = () => {
               <div className="logo-text" onClick={startNewChat}>
                 <h1>ArogyaAI</h1>
                 <span>Clinical Assistant</span>
-              </div>
-            </div>
-            <div className="header-actions">
-              <div className="settings-wrapper" ref={settingsRef}>
-                <button className="icon-btn" onClick={() => setShowSettings(!showSettings)}>
-                  <Settings size={20} />
-                </button>
-                {showSettings && (
-                  <div className="settings-dropdown">
-                    <div className="dropdown-header">Settings</div>
-                    <button className="dropdown-item logout" onClick={() => {
-                      localStorage.removeItem('auth_token');
-                      localStorage.removeItem('user');
-                      navigate('/');
-                    }}>
-                      <LogOut size={18} /> <strong>Logout</strong>
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -593,7 +593,7 @@ const ChatInterface = () => {
       </div>
 
       <style jsx="true">{`
-        .chat-layout { height: 100vh; display: flex; background: #F9FAFB; overflow: hidden; }
+        .chat-layout { height: 100%; display: flex; background: #F9FAFB; overflow: hidden; }
         
         /* SIDEBAR */
         .history-sidebar {
@@ -675,11 +675,11 @@ const ChatInterface = () => {
         .chat-pane { flex: 1; display: flex; flex-direction: column; overflow: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         
         .chat-area { flex: 1; overflow-y: auto; padding: 40px 0; }
-        .messages-container { max-width: 800px; margin: 0 auto; padding: 0 20px; }
+        .messages-container { max-width: 820px; margin: 0 auto; padding: 0 20px; }
         .message-list { display: flex; flex-direction: column; gap: 32px; }
 
         .composer-wrapper { padding: 20px 0 30px; background: linear-gradient(180deg, rgba(249,250,251,0) 0%, #F9FAFB 30%); }
-        .composer-container { max-width: 800px; margin: 0 auto; padding: 0 20px; }
+        .composer-container { max-width: 820px; margin: 0 auto; padding: 0 20px; }
         .input-composer { display: flex; align-items: flex-end; gap: 12px; background: #ffffff; padding: 12px 16px; border-radius: 20px; border: 1px solid #e5e7eb; box-shadow: 0 4px 20px -5px rgba(0,0,0,0.05); }
         .input-composer:focus-within { border-color: #2563eb; box-shadow: 0 4px 25px -5px rgba(37,99,235,0.1); }
         textarea { flex: 1; border: none; font-size: 1rem; padding: 10px 0; resize: none; max-height: 200px; font-family: inherit; }
@@ -921,55 +921,38 @@ const ChatInterface = () => {
         }
         
         .insight-heading {
-          font-size: 1.15rem;
-          font-weight: 900;
-          color: #000000;
-          margin: 20px 0 12px 0;
-          letter-spacing: -0.01em;
-          text-transform: capitalize;
+          font-size: 20px;
+          font-weight: 700;
+          color: #0F172A;
+          margin: 24px 0 16px 0;
         }
         .insight-heading:first-child {
           margin-top: 0;
         }
         .insight-paragraph {
-          margin: 0 0 10px 0;
-          font-weight: 500;
+          margin: 0 0 12px 0;
+          font-weight: 400;
+          font-size: 14px;
           color: #334155;
-          line-height: 1.6;
+          line-height: 1.8;
+        }
+        .important-text {
+          font-weight: 700;
+          color: #0F172A;
         }
         .insight-bullet-list {
-          margin: 12px 0 16px 0;
+          margin: 0 0 24px 0;
           padding-left: 0;
           list-style-type: none;
           display: flex;
           flex-direction: column;
-          gap: 10px;
+          gap: 8px;
         }
         .insight-bullet-list li {
-          font-weight: 500;
+          font-weight: 400;
+          font-size: 14px;
           color: #334155;
-          background: #f8fafc;
-          border: 1px solid #e2e8f0;
-          border-left: 4px solid #2563eb;
-          padding: 12px 16px;
-          border-radius: 8px;
-          display: flex;
-          align-items: flex-start;
-          line-height: 1.5;
-          box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-        }
-        .insight-bullet-list li::before {
-          content: '✓';
-          color: #2563eb;
-          font-weight: 900;
-          margin-right: 12px;
-          font-size: 1.1rem;
-        }
-        .highlighted-warning {
-          color: #000000;
-          font-weight: 900;
-          background: transparent;
-          padding: 0;
+          line-height: 1.8;
         }
         
         .pane-medical-disclaimer {
@@ -1140,26 +1123,30 @@ const ChatInterface = () => {
         
         .message-wrapper { display: flex; gap: 16px; width: 100%; }
         .message-wrapper.user { justify-content: flex-end; }
-        .bot-avatar { width: 36px; height: 36px; background: #2563eb; color: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-top: 4px; }
+        .bot-avatar { width: 36px; height: 36px; background: #2563eb; color: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-top: 4px; flex-shrink: 0; }
         
-        .bubble { padding: 20px; border-radius: 20px; max-width: 85%; line-height: 1.6; position: relative; }
-        .text-body { font-size: 0.95rem; line-height: 1.6; }
+        .bubble { padding: 24px; border-radius: 20px; max-width: 85%; line-height: 1.8; position: relative; }
+        .text-body { font-size: 14px; line-height: 1.8; }
         .user-bubble {
-          background: #e0f2fe;
-          color: #0369a1;
-          border-bottom-right-radius: 4px;
-          border: 1px solid #bae6fd;
-          box-shadow: 0 2px 8px rgba(3,105,161,0.05);
+          background: #2563eb;
+          color: #ffffff;
+          border-radius: 20px;
+          font-weight: 400;
+          padding: 14px 20px;
+          font-size: 14px;
         }
         .user-bubble .insight-paragraph, 
         .user-bubble p, 
         .user-bubble span {
-          color: #0369a1;
-          font-weight: 700;
+          color: #ffffff;
+          font-weight: 400;
+          font-size: 14px;
         }
-        .bot-bubble { background: #ffffff; border: 1px solid #e5e7eb; border-bottom-left-radius: 4px; color: #000000; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .bot-bubble { background: #ffffff; border: 1px solid #e5e7eb; color: #0F172A; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
 
-        .follow-up-bubble { margin-top: 14px; padding: 12px 16px; background: #f0f9ff; color: #2563eb; border-radius: 14px; font-weight: 700; font-size: 0.9rem; border: 1px dashed #2563eb; }
+        .follow-up-bubble { margin-top: 24px; font-size: 13px; color: #1e293b; font-weight: 700; line-height: 1.6; }
+        .follow-up-bubble ul { padding: 0; margin: 0; list-style-type: none; display: flex; flex-direction: column; gap: 6px; }
+        .follow-up-bubble li { display: flex; gap: 8px; }
         .error-box { display: flex; align-items: center; gap: 10px; color: #ef4444; font-weight: 700; }
       `}</style>
     </div>
@@ -1178,11 +1165,32 @@ const MessageBubble = ({ message, onResultClick }) => {
           <div className="error-box"><AlertTriangle size={18} /> {message.text}</div>
         ) : (
           <div className="message-content">
-            <div className="text-body">{renderFormattedText(message.text)}</div>
+            <div className="text-body">
+              {isUser ? message.text : renderFormattedText(message.text)}
+            </div>
+
+            {!isUser && message.memory_used && (
+              <div style={{ marginTop: '12px', fontSize: '11px', color: '#6366f1', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Brain size={12} /> AI accessed conversation history
+              </div>
+            )}
 
             {!isUser && message.follow_up && (
               <div className="follow-up-bubble">
-                {message.follow_up}
+                {message.follow_up.split('\n').map((line, idx) => {
+                  let trimmed = line.trim().replace(/\*\*/g, '');
+                  if (!trimmed) return null;
+                  if (trimmed.startsWith('-') || trimmed.startsWith('*') || trimmed.startsWith('•')) {
+                    let text = trimmed.replace(/^[-*•]\s*/, '').trim();
+                    if (!text.endsWith('?')) text += '?';
+                    return (
+                      <ul key={idx}>
+                        <li><span>•</span> <strong>{text}</strong></li>
+                      </ul>
+                    );
+                  }
+                  return <div key={idx} style={{ marginBottom: "8px" }}>{trimmed}</div>;
+                })}
               </div>
             )}
           </div>
@@ -1196,7 +1204,6 @@ const EmptyState = ({ setInput }) => (
   <div className="empty-state">
     <div className="welcome-badge">Medical Grade AI</div>
     <h1>How can I help you <br /><span>feel better?</span></h1>
-    <p>Describe your symptoms in plain English. I'll analyze them and provide clinical guidance.</p>
     <div className="quick-prompts">
       <button onClick={() => setInput("I have a severe headache and nausea")}>Headache & Nausea</button>
       <button onClick={() => setInput("I'm feeling short of breath")}>Shortness of Breath</button>

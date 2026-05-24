@@ -8,14 +8,11 @@ class Consultation extends Model
 {
     protected $fillable = [
         'user_id',
-        'symptoms_input',
-        'triage_result',
-        'is_completed'
-    ];
-
-    protected $casts = [
-        'symptoms_input' => 'json',
-        'is_completed' => 'boolean'
+        'family_profile_id',
+        'title',
+        'risk_category',
+        'summary',
+        'recommended_action'
     ];
 
     public function user()
@@ -23,13 +20,18 @@ class Consultation extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function predictions()
-    {
-        return $this->hasMany(Prediction::class);
-    }
-
     public function messages()
     {
-        return $this->hasMany(Message::class);
+        return $this->hasMany(ConsultationMessage::class);
+    }
+
+    public function memory()
+    {
+        return $this->hasMany(ConsultationMemory::class);
+    }
+
+    public function summaries()
+    {
+        return $this->hasMany(ConsultationSummary::class);
     }
 }
